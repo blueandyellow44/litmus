@@ -1,0 +1,46 @@
+name: Assessment trial (Haiku vs Sonnet 5)
+
+# Max, 2026-09-26: writes the same stories' assessments with Haiku 4.5 and
+# Sonnet 5, saves nothing to the database, and uploads blind.md (A/B, no
+# model names) and key.json (which is which, tokens, dollars) as an artifact.
+# Stops before any call once spending reaches max_dollars.
+on:
+  workflow_dispatch:
+    inputs:
+      stories:
+        description: "How many multi-outlet stories"
+        required: true
+        default: "10"
+      max_dollars:
+        description: "Stop before any call past this spend"
+        required: true
+        default: "1"
+
+concurrency:
+  group: daily-paper
+  cancel-in-progress: false
+
+jobs:
+  trial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: litmus-server/package-lock.json
+      - name: Install server deps
+        working-directory: litmus-server
+        run: npm ci
+      - name: Run the trial
+        working-directory: litmus-server
+        run: npm run assessment-trial -- --stories=${{ inputs.stories }} --max-dollars=${{ inputs.max_dollars }} --out=trial-out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: assessment-trial
+          path: litmus-server/trial-out/

@@ -1,0 +1,112 @@
+/* Quiet Reader design tokens, paired with the Tailwind theme in
+ * tailwind.config.js and the hex table in src/lib/palette.ts.
+ * Spec: design/rebrand-2026-09-13/quiet-reader/brand.md.
+ *
+ * Most styling lives in Tailwind classes. What belongs here is global: the
+ * ground, the default faces, the focus ring, and the two highlight treatments,
+ * which are CSS classes rather than inline styles so the tokens stay in one file.
+ */
+
+:root {
+  --ground: #F1F0ED;
+  --surface: #FAF9F7;
+  --ink: #1E1F22;
+  --ink2: #45464B;
+  --ink3: #63646A;
+  --rule: #D9D7D2;
+  --rule-strong: #838488;
+  --grid: #E2E0DB;
+  --tint: #F7E1C4;
+  --hot-line: #B2511E;
+  --cool-line: #75838A;
+
+  /* P/H temperature ramp. Fills marks only; never text. */
+  --ph-practical:  #C0C9CE;
+  --ph-grounded:   #B7AE8E;
+  --ph-mixed:      #C1893C;
+  --ph-hot:        #C05A16;
+  --ph-hysterical: #AD3118;
+  /* The edge every ramp mark carries (MARK_STROKE in src/lib/phBand.ts). */
+  --mark-stroke: rgba(30, 31, 34, 0.55);
+
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  color-scheme: light;
+}
+
+html {
+  background: var(--ground);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+/* DECISION 2026-09-13 (C1): the document default is 16px Instrument Sans, not
+ * the 18px "Times New Roman" the broadsheet identity set here.
+ *
+ * The old default made every unclassed element a serif reading size, which is
+ * why the retired design read as a newspaper. Quiet Reader splits the roles:
+ * sans is a label on the instrument, serif is "read this". Most unclassed text
+ * in the shells is a label, so the default is the label face at the label size,
+ * and anything a person READS opts into font-serif at its own role size
+ * (brand.md section 3: story text 18-24 serif, explanatory prose 15-16 sans).
+ *
+ * This lowers the old blanket 18px floor, so the floor is restated where it
+ * still binds: on mobile all running prose is 16px or larger (brand.md section
+ * 3, and the standing mobile rule). Only labels, meta lines and chart
+ * annotations go below 16px. src/lib/brand.test.ts enforces that on <p> in
+ * every *Mobile.tsx. docs/architecture.md section 4 and 7 carry the same scale. */
+body {
+  margin: 0;
+  background: var(--ground);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 2rem 0;
+}
+
+/* Headlines balance their lines instead of leaving a one-word last line. */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* ── Highlight encoding (brand.md section 4) ─────────────────────────────────
+ * Two states, told apart by fill AND underline weight, never by hue alone:
+ *   loaded   : warm tint fill, 1.5px warm underline
+ *   grounded : no fill, 1px cool underline (hedging shares this)
+ * Class names are referenced from src/lib/highlight.ts (HIGHLIGHT_CLASS). */
+.hl-loaded {
+  background: var(--tint);
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-color: var(--hot-line);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.22em;
+  border-radius: 2px;
+  padding: 0 0.06em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.hl-grounded {
+  background: transparent;
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-color: var(--cool-line);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.26em;
+}

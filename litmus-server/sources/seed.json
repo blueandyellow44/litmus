@@ -1,0 +1,674 @@
+{
+  "_note": "RSS URLs change. Every entry below should be smoke-tested with `curl` before the first ingest run. Replace any that 404 or return non-RSS. Add or remove sources to fit. The runIngest seeder will upsert by rss_url, so editing this file and re-running ingest is safe.",
+  "sources": [
+    {
+      "name": "BBC News — World",
+      "outletKey": "bbc",
+      "rssUrl": "http://feeds.bbci.co.uk/news/world/rss.xml",
+      "lean": "center",
+      "type": "broadcast",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "prominence": 3.0
+    },
+    {
+      "name": "BBC News — US & Canada",
+      "outletKey": "bbc",
+      "rssUrl": "http://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml",
+      "lean": "center",
+      "type": "broadcast",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "prominence": 3.0
+    },
+    {
+      "name": "NPR — News",
+      "outletKey": "npr",
+      "rssUrl": "https://feeds.npr.org/1001/rss.xml",
+      "lean": "center",
+      "type": "broadcast",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "prominence": 3.0
+    },
+    {
+      "name": "NPR — Politics",
+      "outletKey": "npr",
+      "rssUrl": "https://feeds.npr.org/1014/rss.xml",
+      "lean": "center",
+      "type": "broadcast",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "prominence": 3.0
+    },
+    {
+      "name": "PBS NewsHour",
+      "outletKey": "pbs-newshour",
+      "rssUrl": "https://www.pbs.org/newshour/feeds/rss/headlines",
+      "lean": "center",
+      "type": "broadcast",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "prominence": 3.0
+    },
+    {
+      "name": "The Hill",
+      "outletKey": "the-hill",
+      "rssUrl": "https://thehill.com/feed/",
+      "lean": "center",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 2.0
+    },
+    {
+      "name": "Axios — Politics & Policy",
+      "outletKey": "axios",
+      "rssUrl": "https://api.axios.com/feed/",
+      "lean": "center",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 2.0
+    },
+    {
+      "name": "Bloomberg — Politics",
+      "outletKey": "bloomberg",
+      "rssUrl": "https://feeds.bloomberg.com/politics/news.rss",
+      "lean": "center",
+      "type": "digital-native",
+      "paywallStatus": "metered",
+      "reliability": 5,
+      "prominence": 2.0
+    },
+    {
+      "name": "Reuters — Top News",
+      "outletKey": "reuters",
+      "rssUrl": "https://feeds.reuters.com/reuters/topNews",
+      "lean": "center",
+      "type": "wire",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "enabled": false,
+      "prominence": 3.0
+    },
+    {
+      "name": "Associated Press — Politics",
+      "outletKey": "associated-press",
+      "rssUrl": "https://feeds.apnews.com/apf-politics",
+      "lean": "center",
+      "type": "wire",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "enabled": false,
+      "prominence": 3.0
+    },
+    {
+      "name": "New York Times — Politics",
+      "outletKey": "new-york-times",
+      "rssUrl": "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml",
+      "lean": "center-left",
+      "type": "newspaper",
+      "paywallStatus": "metered",
+      "reliability": 5,
+      "prominence": 3.0
+    },
+    {
+      "name": "New York Times — US",
+      "outletKey": "new-york-times",
+      "rssUrl": "https://rss.nytimes.com/services/xml/rss/nyt/US.xml",
+      "lean": "center-left",
+      "type": "newspaper",
+      "paywallStatus": "metered",
+      "reliability": 5,
+      "prominence": 3.0
+    },
+    {
+      "name": "Washington Post — Politics",
+      "outletKey": "washington-post",
+      "rssUrl": "https://feeds.washingtonpost.com/rss/politics",
+      "lean": "center-left",
+      "type": "newspaper",
+      "paywallStatus": "metered",
+      "reliability": 5,
+      "prominence": 3.0
+    },
+    {
+      "name": "CNN — Politics",
+      "outletKey": "cnn",
+      "rssUrl": "http://rss.cnn.com/rss/cnn_allpolitics.rss",
+      "lean": "center-left",
+      "type": "broadcast",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 3.0
+    },
+    {
+      "name": "NBC News",
+      "outletKey": "nbc-news",
+      "rssUrl": "https://feeds.nbcnews.com/nbcnews/public/news",
+      "lean": "center-left",
+      "type": "broadcast",
+      "paywallStatus": "free",
+      "reliability": 3,
+      "prominence": 3.0
+    },
+    {
+      "name": "The Atlantic",
+      "outletKey": "the-atlantic",
+      "rssUrl": "https://www.theatlantic.com/feed/all/",
+      "lean": "center-left",
+      "type": "magazine",
+      "paywallStatus": "metered",
+      "reliability": 5,
+      "prominence": 2.0
+    },
+    {
+      "name": "Vox",
+      "outletKey": "vox",
+      "rssUrl": "https://www.vox.com/rss/index.xml",
+      "lean": "left",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 2.0
+    },
+    {
+      "name": "Politico",
+      "outletKey": "politico",
+      "rssUrl": "https://rss.politico.com/politics-news.xml",
+      "lean": "center-left",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 2.0
+    },
+    {
+      "name": "Mother Jones",
+      "outletKey": "mother-jones",
+      "rssUrl": "https://www.motherjones.com/feed/",
+      "lean": "left",
+      "type": "magazine",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "The Guardian — US",
+      "outletKey": "the-guardian",
+      "rssUrl": "https://www.theguardian.com/us-news/rss",
+      "lean": "left",
+      "type": "newspaper",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "prominence": 2.0
+    },
+    {
+      "name": "Wall Street Journal — World",
+      "outletKey": "wall-street-journal",
+      "rssUrl": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
+      "lean": "center-right",
+      "type": "newspaper",
+      "paywallStatus": "hard",
+      "reliability": 5,
+      "prominence": 3.0
+    },
+    {
+      "name": "Wall Street Journal — Politics",
+      "outletKey": "wall-street-journal",
+      "rssUrl": "https://feeds.a.dj.com/rss/RSSPolitics.xml",
+      "lean": "center-right",
+      "type": "newspaper",
+      "paywallStatus": "hard",
+      "reliability": 5,
+      "prominence": 3.0
+    },
+    {
+      "name": "The Economist",
+      "outletKey": "the-economist",
+      "rssUrl": "https://www.economist.com/the-world-this-week/rss.xml",
+      "lean": "center-right",
+      "type": "magazine",
+      "paywallStatus": "metered",
+      "reliability": 5,
+      "prominence": 2.0
+    },
+    {
+      "name": "National Review",
+      "outletKey": "national-review",
+      "rssUrl": "https://www.nationalreview.com/feed/",
+      "lean": "center-right",
+      "type": "magazine",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 2.0
+    },
+    {
+      "name": "RealClearPolitics",
+      "outletKey": "realclearpolitics",
+      "rssUrl": "https://www.realclearpolitics.com/index.xml",
+      "lean": "center-right",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "The Dispatch",
+      "outletKey": "the-dispatch",
+      "rssUrl": "https://thedispatch.com/feed/",
+      "lean": "center-right",
+      "type": "digital-native",
+      "paywallStatus": "metered",
+      "reliability": 5,
+      "prominence": 1.0
+    },
+    {
+      "name": "Fox News — Politics",
+      "outletKey": "fox-news",
+      "rssUrl": "http://feeds.foxnews.com/foxnews/politics",
+      "lean": "right",
+      "type": "broadcast",
+      "paywallStatus": "free",
+      "reliability": 3,
+      "prominence": 3.0
+    },
+    {
+      "name": "Daily Wire",
+      "outletKey": "daily-wire",
+      "rssUrl": "https://www.dailywire.com/feeds/rss.xml",
+      "lean": "right",
+      "type": "digital-native",
+      "paywallStatus": "metered",
+      "reliability": 3,
+      "prominence": 2.0
+    },
+    {
+      "name": "The Federalist",
+      "outletKey": "the-federalist",
+      "rssUrl": "https://thefederalist.com/feed/",
+      "lean": "right",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 3,
+      "prominence": 2.0
+    },
+    {
+      "name": "New York Post",
+      "outletKey": "new-york-post",
+      "rssUrl": "https://nypost.com/feed/",
+      "lean": "right",
+      "type": "newspaper",
+      "paywallStatus": "free",
+      "reliability": 3,
+      "prominence": 2.0
+    },
+    {
+      "name": "Washington Examiner",
+      "outletKey": "washington-examiner",
+      "rssUrl": "https://www.washingtonexaminer.com/feed",
+      "lean": "right",
+      "type": "newspaper",
+      "paywallStatus": "free",
+      "reliability": 3,
+      "prominence": 1.0
+    },
+    {
+      "name": "Washington Times",
+      "outletKey": "washington-times",
+      "rssUrl": "https://www.washingtontimes.com/rss/headlines/news/politics/",
+      "lean": "right",
+      "type": "newspaper",
+      "paywallStatus": "free",
+      "reliability": 3,
+      "prominence": 2.0
+    },
+    {
+      "name": "Breitbart — Politics",
+      "outletKey": "breitbart",
+      "rssUrl": "https://feeds.feedburner.com/breitbart",
+      "lean": "right",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 2,
+      "prominence": 2.0
+    },
+    {
+      "name": "The Intercept",
+      "outletKey": "the-intercept",
+      "rssUrl": "https://theintercept.com/feed/?lang=en",
+      "lean": "left",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "ProPublica",
+      "outletKey": "propublica",
+      "rssUrl": "https://www.propublica.org/feeds/propublica/main",
+      "lean": "center-left",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "prominence": 2.0
+    },
+    {
+      "name": "Reason",
+      "outletKey": "reason",
+      "rssUrl": "https://reason.com/latest/feed/",
+      "lean": "center-right",
+      "type": "magazine",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "The American Conservative",
+      "outletKey": "the-american-conservative",
+      "rssUrl": "https://www.theamericanconservative.com/feed/",
+      "lean": "right",
+      "type": "magazine",
+      "paywallStatus": "free",
+      "reliability": 3,
+      "prominence": 1.0
+    },
+    {
+      "name": "Washington Free Beacon",
+      "outletKey": "washington-free-beacon",
+      "rssUrl": "https://freebeacon.com/feed/",
+      "lean": "center-right",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "The Daily Signal",
+      "outletKey": "the-daily-signal",
+      "rssUrl": "https://www.dailysignal.com/feed/",
+      "lean": "center-right",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "Townhall",
+      "outletKey": "townhall",
+      "rssUrl": "https://townhall.com/rss/columnists/",
+      "lean": "right",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 3,
+      "prominence": 2.0
+    },
+    {
+      "name": "American Greatness",
+      "outletKey": "american-greatness",
+      "rssUrl": "https://amgreatness.com/feed/",
+      "lean": "right",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 3,
+      "prominence": 1.0
+    },
+    {
+      "name": "Jacobin",
+      "outletKey": "jacobin",
+      "rssUrl": "https://jacobin.com/feed",
+      "lean": "left",
+      "type": "magazine",
+      "paywallStatus": "free",
+      "reliability": 3,
+      "prominence": 1.0
+    },
+    {
+      "name": "The Nation",
+      "outletKey": "the-nation",
+      "rssUrl": "https://www.thenation.com/feed/?post_type=article",
+      "lean": "left",
+      "type": "magazine",
+      "paywallStatus": "metered",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "Slate",
+      "outletKey": "slate",
+      "rssUrl": "https://slate.com/feeds/all.rss",
+      "lean": "center-left",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 3,
+      "prominence": 1.0
+    },
+    {
+      "name": "The Bulwark",
+      "outletKey": "the-bulwark",
+      "rssUrl": "https://www.thebulwark.com/feed/",
+      "lean": "center-right",
+      "type": "digital-native",
+      "paywallStatus": "metered",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "Roll Call",
+      "outletKey": "roll-call",
+      "rssUrl": "https://www.rollcall.com/feed/",
+      "lean": "center",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "C-SPAN",
+      "outletKey": "c-span",
+      "rssUrl": "https://www.c-span.org/rss/",
+      "lean": "center",
+      "type": "broadcast",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "enabled": false,
+      "prominence": 1.0
+    },
+    {
+      "name": "Foreign Policy",
+      "outletKey": "foreign-policy",
+      "rssUrl": "https://foreignpolicy.com/feed/",
+      "lean": "center",
+      "type": "magazine",
+      "paywallStatus": "metered",
+      "reliability": 5,
+      "prominence": 2.0
+    },
+    {
+      "name": "Foreign Affairs",
+      "outletKey": "foreign-affairs",
+      "rssUrl": "https://www.foreignaffairs.com/rss.xml",
+      "lean": "center",
+      "type": "magazine",
+      "paywallStatus": "metered",
+      "reliability": 5,
+      "prominence": 2.0
+    },
+    {
+      "name": "The Conversation — US Politics",
+      "outletKey": "the-conversation",
+      "rssUrl": "https://theconversation.com/us/politics/articles.atom",
+      "lean": "center-left",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "Newsweek — Politics",
+      "outletKey": "newsweek",
+      "rssUrl": "https://www.newsweek.com/rss",
+      "lean": "center",
+      "type": "magazine",
+      "paywallStatus": "metered",
+      "reliability": 3,
+      "prominence": 2.0
+    },
+    {
+      "name": "Time",
+      "outletKey": "time",
+      "rssUrl": "https://time.com/feed/",
+      "lean": "center-left",
+      "type": "magazine",
+      "paywallStatus": "metered",
+      "reliability": 4,
+      "prominence": 2.0
+    },
+    {
+      "name": "USA Today — News",
+      "outletKey": "usa-today",
+      "rssUrl": "https://rssfeeds.usatoday.com/usatoday-NewsTopStories",
+      "lean": "center",
+      "type": "newspaper",
+      "paywallStatus": "metered",
+      "reliability": 4,
+      "enabled": false,
+      "prominence": 1.0
+    },
+    {
+      "name": "Forbes",
+      "outletKey": "forbes",
+      "rssUrl": "https://www.forbes.com/real-time/feed2/",
+      "lean": "center-right",
+      "type": "magazine",
+      "paywallStatus": "metered",
+      "reliability": 3,
+      "enabled": false,
+      "prominence": 1.0
+    },
+    {
+      "name": "FactCheck.org",
+      "outletKey": "factcheck-org",
+      "rssUrl": "https://www.factcheck.org/feed/",
+      "lean": "center",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "prominence": 1.0
+    },
+    {
+      "name": "PolitiFact",
+      "outletKey": "politifact",
+      "rssUrl": "https://www.politifact.com/rss/all/",
+      "lean": "center",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "prominence": 1.0
+    },
+    {
+      "name": "BBC Sport",
+      "outletKey": "bbc",
+      "rssUrl": "https://feeds.bbci.co.uk/sport/rss.xml",
+      "lean": "center",
+      "type": "broadcast",
+      "paywallStatus": "free",
+      "reliability": 5,
+      "prominence": 3.0,
+      "register": "sports"
+    },
+    {
+      "name": "ESPN",
+      "outletKey": "espn",
+      "rssUrl": "https://www.espn.com/espn/rss/news",
+      "lean": "center",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 2.0,
+      "register": "sports"
+    },
+    {
+      "name": "CNBC",
+      "outletKey": "cnbc",
+      "rssUrl": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
+      "lean": "center",
+      "type": "broadcast",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 2.0
+    },
+    {
+      "name": "MarketWatch",
+      "outletKey": "marketwatch",
+      "rssUrl": "https://feeds.content.dowjones.io/public/rss/mw_topstories",
+      "lean": "center",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "Ars Technica",
+      "outletKey": "ars-technica",
+      "rssUrl": "https://feeds.arstechnica.com/arstechnica/index",
+      "lean": "center",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 2.0
+    },
+    {
+      "name": "The Verge",
+      "outletKey": "the-verge",
+      "rssUrl": "https://www.theverge.com/rss/index.xml",
+      "lean": "center-left",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "Wired",
+      "outletKey": "wired",
+      "rssUrl": "https://www.wired.com/feed/rss",
+      "lean": "center-left",
+      "type": "magazine",
+      "paywallStatus": "metered",
+      "reliability": 4,
+      "prominence": 2.0
+    },
+    {
+      "name": "ScienceDaily",
+      "outletKey": "sciencedaily",
+      "rssUrl": "https://www.sciencedaily.com/rss/all.xml",
+      "lean": "center",
+      "type": "digital-native",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "STAT News",
+      "outletKey": "stat-news",
+      "rssUrl": "https://www.statnews.com/feed/",
+      "lean": "center",
+      "type": "digital-native",
+      "paywallStatus": "metered",
+      "reliability": 4,
+      "prominence": 1.0
+    },
+    {
+      "name": "Variety",
+      "outletKey": "variety",
+      "rssUrl": "https://variety.com/feed/",
+      "lean": "center-left",
+      "type": "magazine",
+      "paywallStatus": "free",
+      "reliability": 4,
+      "prominence": 1.0,
+      "register": "culture"
+    }
+  ],
+  "_register_note": "register pins an outlet that only ever files one kind of piece. It overrides the scorer's per-article guess in phScorer (applyRegisterPin), because register selects the marker exemption AND changes the composite: a non-news register halves the language weight and switches off the loaded-headline and emotional-lede floors. Leave it absent for any outlet that mixes registers, such as NPR or BBC News, so the scorer still decides per article."
+}

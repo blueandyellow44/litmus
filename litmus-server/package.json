@@ -1,0 +1,52 @@
+{
+  "name": "litmus-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "ingest": "tsx src/ingestion/runIngest.ts",
+    "score": "tsx src/workers/scoreCron.ts",
+    "stories": "tsx src/workers/storyCron.ts",
+    "rescore:haiku-judged": "tsx src/workers/rescoreHaikuJudged.ts",
+    "cluster": "tsx src/workers/clusterCron.ts",
+    "calibrate": "tsx src/scoring/calibrate-run.ts",
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "db:init": "psql $DATABASE_URL -f src/db/schema.sql",
+    "db:init:node": "tsx src/workers/initSchema.ts",
+    "test": "vitest run",
+    "test:unit": "vitest run src",
+    "test:contract": "vitest run src --testNamePattern contract",
+    "migrate:status": "tsx src/workers/migrateCron.ts status",
+    "migrate:up": "tsx src/workers/migrateCron.ts up",
+    "migrate:down": "tsx src/workers/migrateCron.ts down",
+    "migrate:rehearse": "node ../scripts/migrate-rehearse.mjs",
+    "test:guards": "node ../scripts/isolation-guards-test.mjs",
+    "test:writer-guards": "node ../scripts/snapshot-writer-guard-test.mjs",
+    "test:rehearse-scope": "node ../scripts/migrate-rehearse-test.mjs",
+    "test:publish-gate": "node ../scripts/receipt-publish-gate-test.mjs",
+    "restore-flags": "tsx src/workers/restoreFlags.ts",
+    "assessment-trial": "tsx src/workers/assessmentTrial.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@extractus/article-extractor": "^8.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "pg": "^8.13.0",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.7.0",
+    "@types/pg": "^8.11.10",
+    "embedded-postgres": "^18.4.0-beta.17",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.9"
+  }
+}

@@ -1,0 +1,46 @@
+name: Restore flagged articles
+
+# One-off repair (Max, 2026-09-26): removes the flags one ledger run placed by
+# mistake, so those articles return to the ledger's queue. Dry run unless
+# "apply" is ticked, and refuses unless the flag count matches "expect".
+# Every removed flag is copied to story_events_log first (restore_flag).
+# See litmus-server/src/workers/restoreFlags.ts.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Ledger run whose flags to remove"
+        required: true
+        default: "10"
+      expect:
+        description: "Exact number of flag rows expected"
+        required: true
+        default: "149"
+      apply:
+        description: "Write the change (unticked = dry run)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: daily-paper
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: litmus-server/package-lock.json
+      - name: Install server deps
+        working-directory: litmus-server
+        run: npm ci
+      - name: Restore flags
+        working-directory: litmus-server
+        run: npm run restore-flags -- --run=${{ inputs.run_id }} --expect=${{ inputs.expect }} ${{ inputs.apply && '--apply' || '' }}

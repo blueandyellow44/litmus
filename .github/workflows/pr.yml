@@ -1,0 +1,151 @@
+name: pr
+
+# Checks a pull request can run safely: tests, types, build. Nothing else.
+#
+# Deliberately NOT here, and each for a reason:
+#   - no deploy step, and no CLOUDFLARE_* secrets exposed to the job, so a PR
+#     from any branch cannot publish;
+#   - no ANTHROPIC_API_KEY, so no path through this workflow can spend money;
+#   - no DATABASE_URL, so nothing can reach the production database. The unit
+#     tests run without one, and the contract test brings its own throwaway
+#     Postgres;
+#   - no snapshot build and no edition publication.
+#
+# The full funnel lives in daily.yml, on a schedule, with the secrets it needs.
+# The line between the two is that this workflow runs on untrusted branch
+# contents and therefore gets nothing worth stealing and nothing worth breaking.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: server (types, unit, contract)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: litmus-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: litmus-server/package-lock.json
+      - run: npm ci
+      - name: typecheck
+        run: npm run typecheck
+      # Includes the migration contract test, which starts its own embedded
+      # Postgres on a free port and tears it down. No external database.
+      - name: unit and contract tests
+        run: npm test
+      - name: build
+        run: npm run build
+
+  isolation-guards:
+    name: isolation, writer, rehearsal, and publish-gate guards hold
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: litmus-server/package-lock.json
+      - run: npm ci
+        working-directory: litmus-server
+      # Proves a production-shaped environment is refused before the funnel
+      # ingests anything. It runs refresh.sh, so it must never be given real
+      # credentials — the point is that the run dies at the guard.
+      - name: refuse a production-shaped environment
+        run: node scripts/isolation-guards-test.mjs
+      # Exhaustive alias coverage for the process that actually writes the
+      # published snapshot: every way of naming a path outside a valid scratch
+      # root (default-unset, remote API, literal ../, symlink, hard link,
+      # case-only alias) is refused before any network access. No credentials
+      # involved — build-snapshot.mjs's refusal paths never import pg.
+      - name: refuse every alias of the published snapshot
+        run: node scripts/snapshot-writer-guard-test.mjs
+      # An edition whose receipts don't belong to their stories must be
+      # refused publication, matched on the (articleId, canonical URL) pair —
+      # pure in-process fixtures, no network or database.
+      - name: refuse an edition with mismatched receipts
+        run: node scripts/receipt-publish-gate-test.mjs
+      # Runs the real migration rehearsal script end to end against a
+      # hand-written dump and a fixture migrations directory (its own
+      # throwaway embedded Postgres) — proves the script itself reverses
+      # exactly what it added, not a reimplementation of its logic.
+      - name: rehearse migrations against a fixture directory
+        run: node scripts/migrate-rehearse-test.mjs
+      # refresh.sh deploys with the wrangler pinned in litmus-client's lockfile
+      # (never `npx wrangler`) and keeps the Pages token away from the workers
+      # when Jev has its own. Runs the real script against recording fakes.
+      - name: refresh.sh deploys with the pinned wrangler and a scoped token
+        run: node scripts/refresh-deploy-scope-test.mjs
+      # daily.yml keeps every secret off its install and check steps, and its
+      # pre-publication checks block and run before migrations and the funnel.
+      - name: the publishing workflow keeps its checks and its secrets in place
+        run: node scripts/check-publish-workflow.mjs --prove-it-fails
+      # The band table exists in three places by design (no shared package —
+      # architecture decision #1): the server's calibration.ts, the client's
+      # phBand.ts, and the ph-* palette in tailwind.config.js. A copy is only
+      # safe if something notices when one of them moves. --prove-it-fails
+      # mutates each table in memory and requires the check to catch it.
+      # tsx from litmus-server's own node_modules (installed above), not `npx
+      # tsx`, which would fetch it from the registry on every run. The script
+      # imports only TypeScript sources from both packages, no client deps.
+      - name: server, client and Tailwind agree on the P/H bands
+        run: ./litmus-server/node_modules/.bin/tsx scripts/check-band-parity.ts --prove-it-fails
+      # Measures what the bundled edition's coverage actually spans. It REPORTS
+      # and has no representation threshold, deliberately: a balance target a
+      # build must hit is an instruction to pad the roster or suppress the
+      # centre. It runs here so the numbers are in the log of every PR, and it
+      # fails only if it cannot read the roster or the snapshot.
+      - name: representation audit reads its inputs
+        run: node scripts/representation-audit.mjs
+      # The Internet Archive fallback was removed, not disabled. Proves the
+      # scanner catches planted references, then scans every tracked file.
+      - name: no Internet Archive code path
+        run: node scripts/check-no-archive.mjs --prove-it-fails
+
+  client:
+    name: client (types, unit, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: litmus-client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: litmus-client/package-lock.json
+      - run: npm ci
+      - name: unit tests
+        run: npm test
+      # The client build needs a snapshot to import in demo mode. A tiny
+      # structurally-valid stand-in keeps the build honest without committing a
+      # multi-megabyte edition or reaching for a real one.
+      - name: placeholder snapshot for the demo build
+        run: |
+          test -f src/demo/snapshot.json || cat > src/demo/snapshot.json <<'JSON'
+          {"edition":{"schemaVersion":1,"buildCompletedAt":"2026-01-01T00:00:00Z",
+           "sourceLatestFetchAt":"2026-01-01T00:00:00Z","articleCount":0,
+           "articleDetailCount":0,"clusterCount":0,"sectionCount":0},
+           "articles":[],"articleDetail":{},"clusters":[],"sections":[],
+           "section":{},"sectionArticles":{},"sources":[]}
+          JSON
+      - name: build
+        run: VITE_DEMO=true npm run build

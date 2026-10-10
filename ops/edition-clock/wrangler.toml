@@ -1,0 +1,30 @@
+# The edition clock: starts the Daily paper at 3:45 AM Pacific, on time, so
+# the edition is on the page by 5:00 AM (Max, 2026-10-05). Moved from 4:15 on
+# 2026-10-07: with the full-funnel ledger a run takes about 47 minutes, and the
+# 10-07 edition landed at 5:03 (Max: "do it").
+#
+# GitHub's own scheduler started its 3:15 AM run between 7:43 AM and 12:16 PM
+# Pacific every day from 2026-09-28 to 2026-10-05, and moving the cron from
+# 5:15 to 3:15 on 2026-09-27 did not move the start. Cloudflare cron triggers
+# fire on the minute, so this Worker asks GitHub to start the run instead
+# (workflow_dispatch with the story ledger on). The schedule in daily.yml stays
+# as a fallback that skips itself when the day's edition already ran.
+#
+# Deploy:  cd ops/edition-clock && wrangler deploy
+# Secret:  wrangler secret put GITHUB_TOKEN
+#          (fine-grained token, litmus-private only, Actions: read and write)
+name = "litmus-edition-clock"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+# Cloudflare crons are UTC. 3:45 AM Pacific is 10:45 UTC in summer and 11:45
+# UTC in winter; both fire, and the Worker acts only on the one that is 3 AM
+# in Los Angeles.
+[triggers]
+crons = ["45 10 * * *", "45 11 * * *"]
+
+[vars]
+GITHUB_REPO = "blueandyellow44/litmus-private"
+WORKFLOW_FILE = "daily.yml"
+EDITION_HOUR_PACIFIC = "3"

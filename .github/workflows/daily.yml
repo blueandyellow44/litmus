@@ -1,0 +1,329 @@
+name: Daily paper
+# The title says which kind of run this is; the gate job below reads it to tell
+# an edition run from a manual code deploy.
+run-name: ${{ github.event_name == 'schedule' && 'Daily paper (edition, schedule fallback)' || (inputs.run_story_ledger && 'Daily paper (edition)' || 'Daily paper (manual, no ledger)') }}
+
+# The once-a-day funnel: pull fresh news, score it, rebuild the static paper,
+# and deploy to Cloudflare Pages. One edition per Pacific day, the morning
+# paper, plus manual dispatch for recovery and testing. The client drips that
+# edition's stories out over the rest of the day (storyModel.ts
+# scheduleStoryReveal), so a second run adds cost without adding news
+# (Max, 2026-09-22: "workflow should only run once a day then drip out
+# stories the rest of the day").
+# Runs on GitHub's scheduled runners, so nothing depends on a laptop being awake.
+#
+# Cadence is deliberately NOT continuous: a rewspaper is a finite edition, and
+# continuous rebuilding adds churn, overlap risk, and repeated scoring cost
+# before reader demand proves it useful.
+on:
+  schedule:
+    # Timezone-aware schedules (IANA string, DST-aware) per current GitHub docs.
+    # The FALLBACK. The edition clock (ops/edition-clock) starts the day's
+    # edition at 3:45 AM Pacific so it is on the page by 5:00 (Max,
+    # 2026-10-05). This fires 90 minutes later, and GitHub runs it hours late; the
+    # gate job skips it when the edition already ran. It must stay AFTER the
+    # clock's time, or an on-time fallback plus the clock would spend twice.
+    - cron: "15 5 * * *" # 5:15 AM Pacific
+      timezone: "America/Los_Angeles"
+  workflow_dispatch: # manual recovery/testing from the Actions tab
+    inputs:
+      run_story_ledger:
+        description: "Run the story ledger step too (real spend). Deliberate opt-in only - a plain manual dispatch never runs it (Max, 2026-09-21)."
+        type: boolean
+        default: false
+      allow_smaller_edition:
+        description: "Publish even if this run has no ledger and the front page would shrink (scripts/check-edition-size.mjs). Deliberate opt-in only."
+        type: boolean
+        default: false
+
+# One edition build at a time. A manual dispatch must not overlap the
+# scheduled run; the later run queues instead of cancelling the one in flight.
+concurrency:
+  group: daily-paper
+  cancel-in-progress: false
+
+jobs:
+  # The edition clock (ops/edition-clock, a Cloudflare cron) starts the day's
+  # edition on time by dispatch, because GitHub starts this schedule 4.5 to 9
+  # hours late (measured 2026-09-28 to 2026-10-05). The schedule stays as the
+  # fallback: it builds the edition only when no edition run has succeeded
+  # today, Pacific. Dispatched runs always pass. The workflow-level concurrency
+  # group means an edition still in flight finishes before this job looks.
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - name: Has today's edition already run?
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EDITION_SUSPEND_FROM: ${{ vars.EDITION_SUSPEND_FROM }}
+        run: |
+          # Suspension (Max, 2026-10-06: "run it for this week, then suspend on
+          # Sunday unless I tell you otherwise"). EDITION_SUSPEND_FROM is a
+          # repository variable holding a Pacific date; from that date on, no
+          # trigger builds an edition: not the clock's dispatch, not this
+          # fallback, not a manual run. Clear the variable to resume
+          # (gh variable delete EDITION_SUSPEND_FROM); set it to a later date
+          # to move the suspension. The live site keeps its last edition.
+          today="$(TZ=America/Los_Angeles date +%F)"
+          if [ -n "$EDITION_SUSPEND_FROM" ] && [ "$today" \> "$EDITION_SUSPEND_FROM" -o "$today" = "$EDITION_SUSPEND_FROM" ]; then
+            echo "::notice::The paper is suspended from $EDITION_SUSPEND_FROM (today is $today, Pacific). No edition built. Delete the EDITION_SUSPEND_FROM variable to resume."
+            echo "run=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          start="$(TZ=America/Los_Angeles date -d 'today 00:00' --iso-8601=seconds)"
+          count=""
+          for attempt in 1 2 3; do
+            count="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow daily.yml --status success --created ">=$start" --limit 30 \
+              --json databaseId,displayTitle \
+              --jq "[.[] | select(.databaseId != $GITHUB_RUN_ID and (.displayTitle | startswith(\"Daily paper (edition\")))] | length")" && break
+            count=""; sleep 10
+          done
+          if [ -z "$count" ]; then
+            # Could not tell. A late edition beats no edition, so build it.
+            echo "::warning::Could not read today's runs; building the edition rather than guessing it exists."
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          elif [ "$count" -gt 0 ]; then
+            echo "::notice::Today's edition already ran ($count successful edition run since $start). Fallback skipped."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No edition run has succeeded since $start. The edition clock did not deliver; building now."
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  refresh:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    # Install, the pre-publication checks, migrations and the 90-minute funnel.
+    timeout-minutes: 120
+    # No secrets at job level (security baseline, 2026-10-07). They used to sit
+    # here, so every step held them, including `npm ci`, which runs install
+    # scripts from every dependency in both lockfiles. Each secret is now given
+    # only to the steps that use it. The values below are configuration.
+    env:
+      # Max, 2026-09-27 ("yes build it"): Jev judges the P/H numbers and sets
+      # page furniture aside before scoring; Haiku still writes every text field.
+      # Set either back to "haiku" / "off" to return to the old scorer.
+      P_H_JUDGE: jev
+      FURNITURE_FILTER: jev
+      # Jev makes the Story Ledger's same-event calls; Haiku still names stories (Max, 2026-10-02).
+      STORY_JUDGE: jev
+      # A Cloudflare API token with Workers AI access. Optional: when this secret
+      # is unset, the Pages token is tried, and if it cannot call Workers AI
+      # every article falls back to Haiku judging (logged), so no edition is lost.
+      # (JEV_API_TOKEN is passed to the funnel step only.)
+    steps:
+      # Fail fast, before any install, if a required secret NAME is unset.
+      # Prints names only — never values.
+      - name: Preflight required secrets
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          missing=""
+          for name in DATABASE_URL ANTHROPIC_API_KEY CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+            if [ -z "${!name}" ]; then
+              missing="$missing $name"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required secret name(s):$missing"
+            exit 1
+          fi
+          echo "All required secret names are present."
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            litmus-server/package-lock.json
+            litmus-client/package-lock.json
+
+      - name: Install server deps
+        working-directory: litmus-server
+        run: npm ci
+
+      - name: Install client deps
+        working-directory: litmus-client
+        run: npm ci
+
+      # Nothing is published unless the code that builds it passes its own
+      # checks (security baseline, 2026-10-07). These are the pr.yml checks that
+      # need no network and no secrets: no step here is given any. They run
+      # before migrations, so a failing build changes nothing in production and
+      # spends nothing; the site keeps yesterday's edition.
+      - name: "Pre-publication checks: server types and tests"
+        working-directory: litmus-server
+        timeout-minutes: 15
+        run: |
+          npm run typecheck
+          npm test
+          # The funnel runs under Node's own module resolution, which vitest
+          # does not use: a dependency that adds an "exports" map can pass every
+          # test and still fail to load in the run. Load the compiled ingest
+          # modules the way Node will (placeholder database URL, never used).
+          npm run build
+          DATABASE_URL=postgres://unused@127.0.0.1:1/unused node --input-type=module \
+            -e "await import('./dist/ingestion/rssPoller.js'); await import('./dist/ingestion/extractor.js')"
+      - name: "Pre-publication checks: client tests"
+        working-directory: litmus-client
+        timeout-minutes: 10
+        run: npm test
+      - name: "Pre-publication checks: isolation, writer, publish-gate, deploy-scope and band guards"
+        timeout-minutes: 10
+        run: |
+          node scripts/isolation-guards-test.mjs
+          node scripts/snapshot-writer-guard-test.mjs
+          node scripts/receipt-publish-gate-test.mjs
+          node scripts/migrate-rehearse-test.mjs
+          node scripts/refresh-deploy-scope-test.mjs
+          node scripts/check-publish-workflow.mjs --prove-it-fails
+          ./litmus-server/node_modules/.bin/tsx scripts/check-band-parity.ts --prove-it-fails
+          node scripts/check-no-archive.mjs --prove-it-fails
+          node scripts/check-edition-size.mjs --prove-it-fails
+
+      # Regression guard for the ingest hang that killed half of the scheduled
+      # editions: rss-parser polling through Node's global keep-alive agents
+      # left sockets holding the event loop, so ingest finished its work and the
+      # process then sat until the job timeout. Non-blocking on purpose — this
+      # polls real feeds, so a network blip must not cost an edition. It exists
+      # to name the regression in the log the moment it returns.
+      - name: Check the poller still terminates (non-blocking)
+        continue-on-error: true
+        timeout-minutes: 3
+        run: node scripts/check-no-socket-leak.mjs
+
+      # A per-STEP cap, tighter than the job's 45 minutes. The hang burned the
+      # full job budget every time and reported only "The operation was
+      # canceled", which reads like an infrastructure problem rather than a
+      # defect. Failing here instead makes a stall obvious and fast, and leaves
+      # the remaining job budget unspent.
+      # Blocking, and before anything is fetched. The Internet Archive fallback
+      # was removed on 2026-09-13, not switched off; if any tracked file brings
+      # an archive fetch back, no edition is built. See the excerpt policy.
+      - name: No Internet Archive code path
+        run: node scripts/check-no-archive.mjs
+
+      # Schema changes reach production HERE, as their own steps, never inside
+      # the funnel. refresh.sh cannot own this: migrate:up refuses a non-local
+      # database unless ALLOW_PROD_MIGRATE=1, and a production migration must be
+      # preceded by a backup (litmus-server/migrations/README.md rule 6). An
+      # unattended funnel step can honour neither, and dropping the migration
+      # instead is worse: the seeder writes sources.outlet_key, so an ingest
+      # against an unmigrated database dies on the first source.
+      #
+      # Ordinary runs have nothing pending and pay nothing for this.
+      - name: Check for pending migrations
+        id: pending
+        working-directory: litmus-server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -uo pipefail
+          if ! out="$(npm run --silent migrate:status 2>&1)"; then
+            printf '%s\n' "$out"
+            echo "::error::migrate:status failed; refusing to build an edition against a schema of unknown state."
+            exit 1
+          fi
+          printf '%s\n' "$out"
+          # The status line is JSON from src/lib/logger.ts.
+          count="$(printf '%s' "$out" | grep -o '"pending":[0-9]\+' | tail -1 | cut -d: -f2)"
+          if [ -z "$count" ]; then
+            echo "::error::Could not read a pending count from migrate:status. Refusing to guess."
+            exit 1
+          fi
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "$count migration(s) pending."
+
+      # Fails closed. A schema change applied to production with no way back is
+      # a worse outcome than one missed edition, and the error names exactly
+      # what to set.
+      - name: Back up production before migrating (Neon branch)
+        if: steps.pending.outputs.count != '0'
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "$NEON_API_KEY" ] || [ -z "$NEON_PROJECT_ID" ]; then
+            echo "::error::${{ steps.pending.outputs.count }} migration(s) are pending and no backup can be taken. Set the NEON_API_KEY and NEON_PROJECT_ID secrets, or take a Neon branch by hand and run migrate:up with ALLOW_PROD_MIGRATE=1 yourself. Refusing to alter the production schema without a backup."
+            exit 1
+          fi
+          branch="pre-migrate-$(date -u +%Y%m%dT%H%M%SZ)"
+          code="$(curl -sS -o /tmp/neon-branch.json -w '%{http_code}' \
+            -X POST "https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches" \
+            -H "Authorization: Bearer $NEON_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"branch\":{\"name\":\"$branch\"}}")"
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            # The response body carries Neon's reason. It never contains the key.
+            head -c 500 /tmp/neon-branch.json || true
+            echo "::error::Neon refused the backup branch (HTTP $code). No migration applied."
+            exit 1
+          fi
+          echo "Backup branch: $branch"
+
+      - name: Apply pending migrations
+        if: steps.pending.outputs.count != '0'
+        working-directory: litmus-server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ALLOW_PROD_MIGRATE: "1"
+        run: npm run migrate:up
+
+      # SKIP_MIGRATE=1 because the steps above already did it. Without it the
+      # funnel's own migrate:up would refuse the remote database and take the
+      # edition down with it.
+      - name: Run the funnel (ingest -> score -> cluster -> story ledger -> snapshot -> build -> deploy)
+        # 25 minutes (2026-08-10) was set so a stalled worker failed fast. By
+        # 2026-09-28 a healthy run no longer fit: ingest grew from 8.5 to 16
+        # minutes and the ledger takes up to 400 articles, so every scheduled
+        # run from 09-28 to 10-02 timed out mid-ledger and nothing deployed.
+        # 45 still fails fast on a real hang.
+        #
+        # 90 since 2026-10-06. With the ledger offering every eligible article
+        # (800 cap) and attaching across two days, the first full run was
+        # killed by this ceiling at 45:52 in merge review, 750 of 814 pairs
+        # done, nothing deployed: assignment took 15 min (794 articles, 1,268
+        # Jev calls), the sweep 14 min (2,836 calls), after 10 min of ingest
+        # and scoring. A full run is about 55 minutes with member scoring,
+        # assessment and the deploy; every phase logs its start, end and
+        # progress, so a real hang still shows as a phase that stops moving.
+        timeout-minutes: 90
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # refresh.sh hands the Pages token to the deploy command only, when
+          # JEV_API_TOKEN is set; Jev falls back to it otherwise (lib/env.ts).
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          JEV_API_TOKEN: ${{ secrets.JEV_API_TOKEN }}
+          SKIP_MIGRATE: "1"
+          # Real Haiku 4.5 spend. Once a day (Max, 2026-09-19; the workflow
+          # itself is once a day since 2026-09-22): the scheduled edition runs
+          # it by default. A plain
+          # manual workflow_dispatch NEVER runs it (Max, 2026-09-21, after a
+          # manual deploy trigger silently ran a second real ledger pass the
+          # same day as the "once a day" rule was set) - a manual deploy is
+          # for shipping code, not for spending on a fresh ledger run.
+          # run_story_ledger is the deliberate, explicit exception: a
+          # dispatch input that defaults to false, for verifying a fix
+          # against production on demand rather than waiting for the morning.
+          RUN_STORY_LEDGER: ${{ (github.event.schedule == '15 5 * * *' || github.event.inputs.run_story_ledger == 'true') && '1' || '0' }}
+          # The edition-size gate refuses a ledgerless run that would shrink
+          # the front page (2026-10-09: 50 stories became 8). This lifts it.
+          ALLOW_SMALLER_EDITION: ${{ github.event.inputs.allow_smaller_edition == 'true' && '1' || '0' }}
+        run: bash scripts/refresh.sh
