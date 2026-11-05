@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { fetchEditionStatus } from "../../lib/api.ts";
 import { LEGAL_HREF } from "../../lib/brand.ts";
+import { LETTER_LANDING_PATH } from "../../lib/letter.ts";
 import { evaluateEdition, formatEditionDate, formatEditionStamp, formatAge, type EditionStatus } from "../../lib/edition.ts";
 
 // One page (Max, 2026-09-26): LITMUS covers politics only, broadly defined, so
@@ -18,7 +19,8 @@ import { evaluateEdition, formatEditionDate, formatEditionStamp, formatAge, type
 // Share links that land on the front page under their own path, so analytics
 // can count where readers came from (Max, 2026-10-03: the Substack essay links
 // litmustimes.com/substack). The URL stays put; the front page renders.
-export const LANDING_PATHS = ["/substack"];
+// /letter is where the weekly letter's links land (lib/letter.ts).
+export const LANDING_PATHS = ["/substack", LETTER_LANDING_PATH];
 
 export const SECTION_LINKS: { label: string; to: string; end?: boolean; aliases?: string[] }[] = [
   { label: "Stories", to: "/", end: true, aliases: LANDING_PATHS },
@@ -50,7 +52,7 @@ export const MOBILE_SCROLL_MT = "scroll-mt-[109px]";
 // honest, a guessed one is not.
 export function editionLine(edition: EditionStatus | null): string {
   if (!edition) return "Reading the edition record…";
-  if (edition.compiledAt) return `Edition compiled ${formatEditionDate(edition.compiledAt)}`;
+  if (edition.compiledAt) return `Weekly edition, compiled ${formatEditionDate(edition.compiledAt)}`;
   return "Edition date unverified";
 }
 

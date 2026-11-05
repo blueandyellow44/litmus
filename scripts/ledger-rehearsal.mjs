@@ -40,7 +40,7 @@ const EmbeddedPostgres = serverRequire("embedded-postgres").default;
 const { Client } = serverRequire("pg");
 
 const ARCHIVE_SNAPSHOT =
-  "/path/to/litmus/.backups/litmus-original-2026-09-13/live-site/assets/snapshot-WWiD0q9m.js";
+  "/Users/maxsheahan/LITMUS2/.backups/litmus-original-2026-09-13/live-site/assets/snapshot-WWiD0q9m.js";
 
 const PHASE_BY_TOOL = {
   submit_story_decisions: "assignment",

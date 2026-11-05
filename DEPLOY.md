@@ -25,7 +25,7 @@ free scheduled runner. One-time setup:
    connection string. This is `DATABASE_URL`.
 2. **Push this repo to GitHub.** It is not a git repo yet:
    ```bash
-   cd /path/to/litmus
+   cd /Users/maxsheahan/LITMUS2
    git init && git add -A && git commit -m "LITMUS"
    gh repo create litmus --private --source=. --push
    ```

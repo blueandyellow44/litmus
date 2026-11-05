@@ -37,3 +37,28 @@ describe("the Hyperbolic pairing floor", () => {
     expect(computeComposite(dims({ headline: 1.2, language: 1.3, sourcing: 1.4, fallacies: 1.1, structure: 1.2 }), flags).composite).toBe(1.2);
   });
 });
+
+// Max, 2026-10-10: "You can be persuasive and grounded. You can be persuasive
+// and proportional." The opinion floor (2.5) is gone; the flag is a label.
+describe("an opinion column carries no floor", () => {
+  const opinion = { ...flags, opinionColumn: true };
+
+  it("scores a calm, sourced column on its language, below 2.5", () => {
+    const b = computeComposite(dims({ headline: 1.5, language: 1.5, sourcing: 1.5, fallacies: 1, structure: 1.5 }), opinion);
+    expect(b.composite).toBe(1.4);
+    expect(bandFor(b.composite).label).toBe("Proportionate");
+    expect(b.raised).toEqual([]);
+  });
+
+  it("gives the same number whether or not the piece is flagged as opinion", () => {
+    for (const d of [dims({}), dims({ headline: 2, language: 2.2, sourcing: 2 }), dims({ headline: 4, language: 4, fallacies: 3 })]) {
+      expect(computeComposite(d, opinion).composite).toBe(computeComposite(d, flags).composite);
+    }
+  });
+
+  it("still lets a heated column reach its number through the floors that read the writing", () => {
+    const b = computeComposite(dims({ headline: 2, language: 2 }), { ...opinion, fallacyCount: 3, oneSidedSourcing: true, loadedHeadline: true, emotionalLede: true });
+    expect(b.composite).toBe(3.5);
+    expect(b.raised).not.toContain("opinion column");
+  });
+});

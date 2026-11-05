@@ -3,7 +3,11 @@ import {
   compareStories,
   storyTimeMs,
   withScoredReport,
+  inThisWeeksPaper,
   inTodaysPaper,
+  scoredOutletCount,
+  WEEKLY_EDITION_DAYS,
+  WEEKLY_EDITION_STORIES,
   TODAYS_PAPER_HOURS,
   hasSomethingToShow,
   coverageRanCalm,
@@ -183,6 +187,53 @@ describe("edition order", () => {
   it("reads the edition day in UTC and tolerates a bad timestamp", () => {
     expect(editionDay("2026-09-13T23:59:59Z")).toBe("2026-09-13");
     expect(editionDay("garbage")).toBe("");
+  });
+});
+
+describe("inThisWeeksPaper", () => {
+  const built = "2026-10-11T12:00:00.000Z";
+  const at = (iso: string, outlets: number) =>
+    story({
+      firstSeenAt: iso,
+      updatedAt: iso,
+      members: Array.from({ length: outlets }, (_, i) => member({ publishedAt: iso, composite: 1.5 + i * 0.3 })),
+    });
+
+  it("is the twenty most covered stories of the seven days before the build", () => {
+    expect(WEEKLY_EDITION_STORIES).toBe(20);
+    expect(WEEKLY_EDITION_DAYS).toBe(7);
+    const week = Array.from({ length: 25 }, (_, i) => at("2026-10-08T12:00:00.000Z", 2 + (i % 5)));
+    const picked = inThisWeeksPaper(week, built);
+    expect(picked).toHaveLength(20);
+    expect(scoredOutletCount(picked[0]!)).toBe(6);
+    // Five stories each at 6, 5, 4 and 3 outlets fill the twenty; the two-outlet ones wait.
+    expect(scoredOutletCount(picked[19]!)).toBe(3);
+  });
+
+  it("leaves out a story with no report inside the week, however widely covered", () => {
+    const lastWeek = at("2026-10-04T11:59:59.000Z", 9);
+    const thisWeek = at("2026-10-04T12:00:00.000Z", 2);
+    expect(inThisWeeksPaper([lastWeek, thisWeek], built).map((s) => s.id)).toEqual([thisWeek.id]);
+  });
+
+  it("breaks a tie on coverage with the newer story", () => {
+    const older = at("2026-10-06T12:00:00.000Z", 3);
+    const newer = at("2026-10-09T12:00:00.000Z", 3);
+    expect(inThisWeeksPaper([older, newer], built).map((s) => s.id)).toEqual([newer.id, older.id]);
+  });
+
+  it("counts outlets that were scored, not outlets that only ran a headline", () => {
+    const iso = "2026-10-09T12:00:00.000Z";
+    const mostlyUnread = story({ firstSeenAt: iso, updatedAt: iso, members: [member({ publishedAt: iso }), member({ publishedAt: iso }), headlineOnly({ publishedAt: iso }), headlineOnly({ publishedAt: iso })] });
+    const read = at(iso, 3);
+    expect(inThisWeeksPaper([mostlyUnread, read], built)[0]!.id).toBe(read.id);
+  });
+
+  it("shows the most covered stories when the build time is unreadable, and does not change its input", () => {
+    const input = [at("2026-01-01T00:00:00.000Z", 2), at("2026-01-02T00:00:00.000Z", 4)];
+    const copy = [...input];
+    expect(inThisWeeksPaper(input, "not a date").map((s) => s.id)).toEqual([input[1]!.id, input[0]!.id]);
+    expect(input).toEqual(copy);
   });
 });
 

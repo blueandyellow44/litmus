@@ -91,13 +91,13 @@ check(
 check("zero articles -> unknown", state({ ...good, articleCount: 0 }), "unknown");
 check("non-numeric article count -> unknown", state({ ...good, articleCount: "200" }), "unknown");
 check(
-  "31h old (one missed edition) -> stale",
-  state({ ...good, buildCompletedAt: hoursAgo(31), sourceLatestFetchAt: hoursAgo(31) }),
+  "8 days and 1h old (one missed weekly edition) -> stale",
+  state({ ...good, buildCompletedAt: hoursAgo(193), sourceLatestFetchAt: hoursAgo(193) }),
   "stale",
 );
 check(
-  "37h old -> stale",
-  state({ ...good, buildCompletedAt: hoursAgo(37), sourceLatestFetchAt: hoursAgo(38) }),
+  "9 days old -> stale",
+  state({ ...good, buildCompletedAt: hoursAgo(216), sourceLatestFetchAt: hoursAgo(217) }),
   "stale",
 );
 check(
@@ -111,9 +111,10 @@ check(
   "stale",
 );
 check("17h old -> fresh", state({ ...good, buildCompletedAt: hoursAgo(17), sourceLatestFetchAt: hoursAgo(17) }), "fresh");
+check("6 days old (midweek of a weekly paper) -> fresh", state({ ...good, buildCompletedAt: hoursAgo(144), sourceLatestFetchAt: hoursAgo(144) }), "fresh");
 check(
-  "29h old (a late but not missed daily run) -> fresh",
-  state({ ...good, buildCompletedAt: hoursAgo(29), sourceLatestFetchAt: hoursAgo(29) }),
+  "7 days and 23h old (a late but not missed weekly run) -> fresh",
+  state({ ...good, buildCompletedAt: hoursAgo(191), sourceLatestFetchAt: hoursAgo(191) }),
   "fresh",
 );
 check("3h old -> fresh", state(good), "fresh");

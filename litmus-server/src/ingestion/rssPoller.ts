@@ -76,7 +76,7 @@ export interface PollResult {
 }
 
 export async function pollFeedDetailed(source: Source, policy: FetchPolicy = PUBLIC_ONLY): Promise<PollResult> {
-  const dropped: Record<ItemDropReason, number> = { "no-url": 0, "no-title": 0 };
+  const dropped: Record<ItemDropReason, number> = { "no-url": 0, "no-title": 0, commerce: 0 };
   let feed;
   let resolvedUrl: string | null = null;
 
@@ -120,6 +120,11 @@ export async function pollFeedDetailed(source: Source, policy: FetchPolicy = PUB
       entries: feed.items.length,
       ...dropped,
     });
+  }
+
+  // Shopping content skipped on purpose is information, not a warning.
+  if (dropped.commerce > 0) {
+    logger.info("shopping entries skipped", { sourceId: source.id, name: source.name, entries: feed.items.length, commerce: dropped.commerce });
   }
 
   return { items, entries: feed.items.length, dropped, error: null, resolvedUrl };

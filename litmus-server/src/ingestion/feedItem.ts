@@ -3,13 +3,16 @@
 // testable against real feed shapes.
 
 import { decodeEntities } from "../lib/entities.js";
+import { commerceRule } from "./commerce.js";
 import type { RawFeedItem } from "../types.js";
 
 // Why an entry did not become an article. The poller counts these rather than
 // dropping entries silently: an item lost with no reason is indistinguishable
 // from a feed that published nothing, which is how Jacobin lost twenty fresh
 // articles a day without anyone seeing a single error.
-export type ItemDropReason = "no-url" | "no-title";
+// "commerce" is shopping content, skipped on purpose (commerce.ts). The other
+// two are entries the parser could not use.
+export type ItemDropReason = "no-url" | "no-title" | "commerce";
 
 export interface ParsedEntry {
   title?: string;
@@ -55,6 +58,7 @@ export function toRawFeedItem(
   if (!url) return { drop: "no-url" };
   const title = entry.title ? decodeEntities(entry.title).trim() : "";
   if (!title) return { drop: "no-title" };
+  if (commerceRule(title, url)) return { drop: "commerce" };
 
   return {
     item: {

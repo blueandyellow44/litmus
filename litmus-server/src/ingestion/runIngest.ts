@@ -86,6 +86,8 @@ interface IngestStats {
   pollError: string | null;
   droppedNoUrl: number;
   droppedNoTitle: number;
+  /** Shopping content skipped on purpose (commerce.ts); not a fault. */
+  skippedCommerce: number;
   /** Set when the configured feed URL redirects; the seed needs canonicalising. */
   resolvedUrl: string | null;
 }
@@ -143,6 +145,7 @@ async function ingestSource(source: LoadedSource, siblingSourceIds: number[]): P
     pollError: null,
     droppedNoUrl: 0,
     droppedNoTitle: 0,
+    skippedCommerce: 0,
     resolvedUrl: null,
   };
 
@@ -152,6 +155,7 @@ async function ingestSource(source: LoadedSource, siblingSourceIds: number[]): P
   stats.pollError = poll.error;
   stats.droppedNoUrl = poll.dropped["no-url"];
   stats.droppedNoTitle = poll.dropped["no-title"];
+  stats.skippedCommerce = poll.dropped.commerce;
   stats.resolvedUrl = poll.resolvedUrl;
 
   for (const item of items) {

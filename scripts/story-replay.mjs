@@ -49,8 +49,8 @@ const EmbeddedPostgres = serverRequire("embedded-postgres").default;
 const { Client } = serverRequire("pg");
 
 const ARCHIVE_SNAPSHOT =
-  "/path/to/litmus/.backups/litmus-original-2026-09-13/live-site/assets/snapshot-WWiD0q9m.js";
-const REAL_ENV_FILE = "/path/to/litmus/litmus-server/.env";
+  "/Users/maxsheahan/LITMUS2/.backups/litmus-original-2026-09-13/live-site/assets/snapshot-WWiD0q9m.js";
+const REAL_ENV_FILE = "/Users/maxsheahan/LITMUS2/litmus-server/.env";
 const GROUND_TRUTH = path.join(
   ROOT,
   "docs/audits/ground-truth-2026-09-13/reconciled-true-groups.json",

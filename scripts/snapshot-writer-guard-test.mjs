@@ -37,7 +37,7 @@ const WRITER = path.join(ROOT, "scripts/build-snapshot.mjs");
 const PUBLISHED = path.join(ROOT, "litmus-client/src/demo/snapshot.json");
 // Read-only reference to the SIBLING worktree's published snapshot. Never
 // opened for writing anywhere in this file — see the header.
-const OTHER_WORKTREE_SNAPSHOT = "/path/to/litmus/litmus-client/src/demo/snapshot.json";
+const OTHER_WORKTREE_SNAPSHOT = "/Users/maxsheahan/LITMUS2/litmus-client/src/demo/snapshot.json";
 
 async function sha256(file) {
   if (!existsSync(file)) return null;
