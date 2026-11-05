@@ -27,6 +27,9 @@ describe("landing paths", () => {
   it("marks Stories on /substack", () => {
     expect(storiesLink("/substack")).toContain("font-semibold");
   });
+  it("marks Stories on /letter", () => {
+    expect(storiesLink("/letter")).toContain("font-semibold");
+  });
   it("does not mark Stories on /about", () => {
     expect(storiesLink("/about")).not.toContain("font-semibold");
   });

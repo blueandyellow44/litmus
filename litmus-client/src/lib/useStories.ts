@@ -5,24 +5,18 @@
 import { useEffect, useState } from "react";
 import { fetchStories, fetchEditionStatus, ApiHttpError } from "./api.ts";
 import type { StoryDTO } from "./storyTypes.ts";
-import { inPoliticalScope, inTodaysPaper, orderStories, scheduleStoryReveal, withScoredReport } from "./storyModel.ts";
+import { inPoliticalScope, inThisWeeksPaper, orderStories, withScoredReport } from "./storyModel.ts";
 
 export interface StoriesState {
   stories: StoryDTO[] | null;
   error: string;
 }
 
-// How often an open page re-applies the drip. The edition is fetched once;
-// only the reveal is re-computed, so a reader who leaves the tab open still
-// sees the day's stories arrive (scheduleStoryReveal spreads them over the day).
-const REVEAL_TICK_MS = 5 * 60 * 1000;
-
 export function useStories(): StoriesState {
   const [state, setState] = useState<StoriesState>({ stories: null, error: "" });
 
   useEffect(() => {
     let cancelled = false;
-    let tick: ReturnType<typeof setInterval> | undefined;
     (async () => {
       try {
         const [allStories, edition] = await Promise.all([fetchStories(), fetchEditionStatus()]);
@@ -32,11 +26,10 @@ export function useStories(): StoriesState {
           setState({ stories: orderStories(inScope), error: "" });
           return;
         }
-        const compiledAt = edition.compiledAt.toISOString();
-        const stories = inTodaysPaper(inScope, compiledAt);
-        const reveal = () => setState({ stories: scheduleStoryReveal(stories, compiledAt), error: "" });
-        reveal();
-        tick = setInterval(reveal, REVEAL_TICK_MS);
+        // The weekly edition is on the page whole from the moment it is
+        // published (Max, 2026-10-11); nothing is released through the day.
+        const week = inThisWeeksPaper(inScope, edition.compiledAt.toISOString());
+        setState({ stories: orderStories(week), error: "" });
       } catch (err) {
         if (!cancelled) {
           setState((s) => ({ ...s, error: err instanceof ApiHttpError ? err.message : String(err) }));
@@ -45,7 +38,6 @@ export function useStories(): StoriesState {
     })();
     return () => {
       cancelled = true;
-      if (tick !== undefined) clearInterval(tick);
     };
   }, []);
 

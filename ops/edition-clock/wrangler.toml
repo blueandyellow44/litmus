@@ -1,5 +1,8 @@
-# The edition clock: starts the Daily paper at 3:45 AM Pacific, on time, so
-# the edition is on the page by 5:00 AM (Max, 2026-10-05). Moved from 4:15 on
+# The edition clock: starts the weekly paper at 3:45 AM Pacific on SUNDAY
+# (Max, 2026-10-11: "Weekly paper with the letter", out Sunday morning; the
+# Sunday crons landed 2026-10-18 after the first weekly edition was started by
+# hand on 10-11 and nothing started the second). Before that it ran daily
+# (Max, 2026-10-05: on the page by 5:00 AM). Moved from 4:15 on
 # 2026-10-07: with the full-funnel ledger a run takes about 47 minutes, and the
 # 10-07 edition landed at 5:03 (Max: "do it").
 #
@@ -20,9 +23,11 @@ workers_dev = false
 
 # Cloudflare crons are UTC. 3:45 AM Pacific is 10:45 UTC in summer and 11:45
 # UTC in winter; both fire, and the Worker acts only on the one that is 3 AM
-# in Los Angeles.
+# in Los Angeles. Cloudflare's day-of-week field takes names (SUN) or 1-7, never
+# 0 (deploy refused "45 10 * * 0" on 2026-10-18); Sunday at 10:45 or 11:45
+# UTC is still Sunday in Los Angeles.
 [triggers]
-crons = ["45 10 * * *", "45 11 * * *"]
+crons = ["45 10 * * SUN", "45 11 * * SUN"]
 
 [vars]
 GITHUB_REPO = "blueandyellow44/litmus-private"

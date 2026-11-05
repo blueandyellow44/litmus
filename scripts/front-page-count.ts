@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { inPoliticalScope, inTodaysPaper, withScoredReport } from "../litmus-client/src/lib/storyModel.js";
+import { inPoliticalScope, inThisWeeksPaper, withScoredReport } from "../litmus-client/src/lib/storyModel.js";
 import type { StoryDTO } from "../litmus-client/src/lib/storyTypes.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -19,5 +19,5 @@ if (!Array.isArray(snapshot.stories)) {
 }
 const inScope = withScoredReport(inPoliticalScope(snapshot.stories));
 const builtAt = snapshot.edition?.buildCompletedAt ?? "";
-const shown = builtAt ? inTodaysPaper(inScope, builtAt) : inScope;
+const shown = builtAt ? inThisWeeksPaper(inScope, builtAt) : inScope;
 console.log(JSON.stringify({ stories: shown.length, builtAt }));

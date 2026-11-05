@@ -3,7 +3,8 @@
 //
 // Why: the spec has always defined the composite as a weighted sum with
 // conditional penalties (headline and language weighted HIGH, a +0.5
-// sensationalism tax, a cumulative fallacy penalty, an opinion floor). Asking
+// sensationalism tax, a cumulative fallacy penalty, and, until 2026-10-10, an
+// opinion floor). Asking
 // the model to apply that arithmetic does not work. Measured on the 2026-08-02
 // smoke run: on every article the returned composite was within a rounding step
 // of the flat mean of the five dimensions, and the penalties the model itself
@@ -189,11 +190,17 @@ export function computeComposite(
     raised.push("alarm headline together with extreme language");
   }
 
-  // Opinion columns are inherently persuasive; the spec floors them at 2.5.
-  if (flags.opinionColumn && value < 2.5) {
-    value = 2.5;
-    raised.push("opinion column");
-  }
+  // No floor for opinion columns (removed 2026-10-10). The original spec held
+  // them at 2.5 as "inherently persuasive". Max: "an opinion piece can sit
+  // below 2.5. Even if I'm being persuasive, doesn't mean that I'm being
+  // hyperbolic. You can be persuasive and grounded. You can be persuasive and
+  // proportional." It was the one floor that read the genre and not the text:
+  // on the 2026-10-08 edition it bound on 31 tellings, about 24 of them
+  // shopping roundups the scorer had flagged as opinion, and in the LITMUS Live
+  // meter its twin put 14 of 29 debate answers at exactly 2.5. A heated column
+  // still reaches its number through the floors that read the writing
+  // (fallacies, one-sided sourcing, a loaded headline, an emotional lede).
+  // opinionColumn stays on the record as a label; it no longer moves the score.
 
   const composite = Math.max(1.0, Math.min(5.0, Math.round(value * 10) / 10));
   return {

@@ -11,6 +11,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { TAGLINE } from "../../lib/brand.ts";
 import { CONTROL, FOCUS_RING } from "../meta.tsx";
 import { DeviceSwitch } from "../DeviceSwitch.tsx";
+import { LetterSignup } from "../LetterSignup.tsx";
 import { Wordmark } from "../Wordmark.tsx";
 import { Byline } from "../story/Byline.tsx";
 import { EditionNotice, LEGAL_HREF, SECTION_LINKS, editionLine, useEditionStatus, useSectionActive } from "./shared.tsx";
@@ -57,6 +58,8 @@ export function LayoutMobile() {
 
       <footer className="border-t border-rule mt-6 px-4 py-5 font-sans text-[16px] text-ink3">
         <p className="text-ink2 m-0">{TAGLINE}</p>
+
+        <LetterSignup placement="footer" className="mt-4 pb-4 border-b border-rule" />
 
         <nav aria-label="About LITMUS" className="mt-3 flex flex-col">
           <NavLink to="/sources" className={FOOTER_LINK}>

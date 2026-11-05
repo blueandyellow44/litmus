@@ -717,6 +717,45 @@ export function inTodaysPaper(stories: readonly StoryDTO[], buildCompletedAt: st
   return stories.filter((s) => storyTimeMs(s) >= cutoff);
 }
 
+// The weekly paper (Max, 2026-10-11: "Weekly paper with the letter", "The
+// week's most covered stories", 20 of them, Sunday morning). The paper moved
+// from one edition a day to one a week for cost, so the front page is no
+// longer a day's stories released through the day: it is the stories the most
+// outlets were scored on in the seven days before the edition was built,
+// measured from the build and never from the reader's clock. Ties go to the
+// newer story. This picks the edition; orderStories still orders the page.
+// inTodaysPaper and scheduleStoryReveal above are the daily paper's rules and
+// are kept, tested, for the day the paper is daily again.
+export const WEEKLY_EDITION_DAYS = 7;
+export const WEEKLY_EDITION_STORIES = 20;
+
+export function scoredOutletCount(story: Pick<StoryDTO, "members">): number {
+  return new Set(
+    story.members.filter((m) => m.role === "primary" && m.kind !== "headline_only" && isScored(m)).map((m) => m.outletKey),
+  ).size;
+}
+
+function moreCoveredFirst(a: StoryDTO, b: StoryDTO): number {
+  const outlets = scoredOutletCount(b) - scoredOutletCount(a);
+  if (outlets !== 0) return outlets;
+  const time = storyTimeMs(b) - storyTimeMs(a);
+  if (time !== 0) return time;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+// Most covered first. Callers that show a page re-order with orderStories.
+export function inThisWeeksPaper(
+  stories: readonly StoryDTO[],
+  buildCompletedAt: string,
+  count: number = WEEKLY_EDITION_STORIES,
+): StoryDTO[] {
+  const builtMs = Date.parse(buildCompletedAt);
+  // No valid build time is a data problem, not a reason to hide the edition:
+  // the week cannot be measured, so the most covered stories stand in for it.
+  const cutoff = Number.isFinite(builtMs) ? builtMs - WEEKLY_EDITION_DAYS * 24 * 60 * 60 * 1000 : -Infinity;
+  return stories.filter((s) => storyTimeMs(s) >= cutoff).sort(moreCoveredFirst).slice(0, count);
+}
+
 // Evidence under every outlet (Max, 2026-09-26: "under each outlet evidence of
 // why we rated their article the way we did"; paraphrase and split quotes are
 // fine). The quotes are the scorer's own marked spans, which the server keeps

@@ -18,12 +18,15 @@ run-name: ${{ github.event_name == 'schedule' && 'Daily paper (edition, schedule
 on:
   schedule:
     # Timezone-aware schedules (IANA string, DST-aware) per current GitHub docs.
-    # The FALLBACK. The edition clock (ops/edition-clock) starts the day's
-    # edition at 3:45 AM Pacific so it is on the page by 5:00 (Max,
-    # 2026-10-05). This fires 90 minutes later, and GitHub runs it hours late; the
-    # gate job skips it when the edition already ran. It must stay AFTER the
-    # clock's time, or an on-time fallback plus the clock would spend twice.
-    - cron: "15 5 * * *" # 5:15 AM Pacific
+    # The FALLBACK. The edition clock (ops/edition-clock) starts the week's
+    # edition at 3:45 AM Pacific on Sunday so it is on the page by 5:00 (daily
+    # until 2026-10-11; weekly since, Max: "Weekly paper with the letter"). This
+    # fires 90 minutes later, and GitHub runs it hours late; the gate job skips
+    # it when the edition already ran. It must stay AFTER the clock's time, or
+    # an on-time fallback plus the clock would spend twice. The schedule string
+    # is also what turns the story ledger on below (RUN_STORY_LEDGER): change
+    # both or the fallback builds a ledgerless edition.
+    - cron: "15 5 * * 0" # 5:15 AM Pacific, Sundays only (weekly paper, Max 2026-10-11)
       timezone: "America/Los_Angeles"
   workflow_dispatch: # manual recovery/testing from the Actions tab
     inputs:
@@ -322,8 +325,35 @@ jobs:
           # run_story_ledger is the deliberate, explicit exception: a
           # dispatch input that defaults to false, for verifying a fix
           # against production on demand rather than waiting for the morning.
-          RUN_STORY_LEDGER: ${{ (github.event.schedule == '15 5 * * *' || github.event.inputs.run_story_ledger == 'true') && '1' || '0' }}
+          RUN_STORY_LEDGER: ${{ (github.event.schedule == '15 5 * * 0' || github.event.inputs.run_story_ledger == 'true') && '1' || '0' }}
           # The edition-size gate refuses a ledgerless run that would shrink
           # the front page (2026-10-09: 50 stories became 8). This lifts it.
           ALLOW_SMALLER_EDITION: ${{ github.event.inputs.allow_smaller_edition == 'true' && '1' || '0' }}
         run: bash scripts/refresh.sh
+
+      # The weekly letter rides with the edition (Max, 2026-10-11: the letter is
+      # the edition's delivery notice; one run builds the paper and drafts the
+      # letter, Max reads and sends). scripts/weekly-letter.ts reads the snapshot
+      # the funnel just published and never sends: with BUTTONDOWN_API_KEY it
+      # creates a Buttondown DRAFT; without it, the letter is still written and
+      # kept as a run artifact, and the run says so out loud. A ledgerless run
+      # has no story assessments to write from, so it skips.
+      - name: Draft the weekly letter
+        if: ${{ github.event.schedule == '15 5 * * 0' || github.event.inputs.run_story_ledger == 'true' }}
+        env:
+          BUTTONDOWN_API_KEY: ${{ secrets.BUTTONDOWN_API_KEY }}
+        run: |
+          mkdir -p letter
+          if [ -z "$BUTTONDOWN_API_KEY" ]; then
+            echo "::warning::BUTTONDOWN_API_KEY is not a repository secret: the letter is in this run's artifacts only, no Buttondown draft was created. Add it with: gh secret set BUTTONDOWN_API_KEY"
+            ./litmus-server/node_modules/.bin/tsx scripts/weekly-letter.ts --out letter/weekly-letter.md
+          else
+            ./litmus-server/node_modules/.bin/tsx scripts/weekly-letter.ts --out letter/weekly-letter.md --draft
+          fi
+      - name: Keep the letter with the run
+        if: ${{ always() && (github.event.schedule == '15 5 * * 0' || github.event.inputs.run_story_ledger == 'true') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-letter
+          path: letter/
+          if-no-files-found: warn

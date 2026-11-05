@@ -62,7 +62,7 @@ Actions:
 - new: it is news but no candidate is the same event. Give a neutral headline, one-sentence event_statement, and a stable new_story_key shared by same-event articles in this batch.
 - confidence: choose one of high, medium, or low. Use high only for strong, unambiguous same-event reasoning.
 - flag: evidence is insufficient or genuinely ambiguous.
-- not_news: the item is navigation, furniture, or otherwise not a report.
+- not_news: the item is navigation, furniture, or otherwise not a report. Shopping content is not news: a deals roundup, a product price cut, a gift guide, a sale-event tracker, or any piece whose purpose is to sell. A report ABOUT commerce is news (a merger, a company's sales figures, a trade or pricing agreement).
 
 Reasons are factual and at most 20 words. Return one decision per article through the tool.
 `.trim();

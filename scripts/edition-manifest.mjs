@@ -14,14 +14,11 @@ import { citationsOf, allCitationsAreMembers, memberKey } from "./receiptIdentit
 
 export const EDITION_SCHEMA_VERSION = 1;
 
-// A once-a-day paper (5:15 AM Pacific, .github/workflows/daily.yml, since
-// 2026-09-22) that has gone 30 hours without a successful rebuild has missed
-// its expected edition, and the reader is told so. 30, not 24: GitHub's
-// scheduled runs start late (the 2026-09-22 morning run started 4h42m after
-// its cron time), and a paper that was on time must not read "stale" while
-// the next one is still queued. A missed edition must never sit behind a
-// "fresh" label for a day and a half. Was 18 while the paper ran twice a day.
-export const STALE_AFTER_HOURS = 30;
+// A once-a-week paper (Sunday morning; Max, 2026-10-11) that has gone eight
+// days without a successful rebuild has missed its expected edition. Eight,
+// not seven: a paper that was on time must not read "stale" on Sunday morning
+// while the next one is still being built. Was 30 hours for the daily paper.
+export const STALE_AFTER_HOURS = 192;
 
 // Clock skew allowance. A timestamp further in the future than this is treated
 // as broken evidence, not as a very fresh edition.
@@ -379,6 +376,6 @@ export function editionState(edition, nowMs) {
 
   const hours = STALE_AFTER_HOURS * 3_600_000;
   const oldest = Math.min(built, fetched);
-  if (nowMs - oldest > hours) return { state: "stale", reason: "older than the daily window" };
-  return { state: "fresh", reason: "within the daily window" };
+  if (nowMs - oldest > hours) return { state: "stale", reason: "older than the weekly window" };
+  return { state: "fresh", reason: "within the weekly window" };
 }

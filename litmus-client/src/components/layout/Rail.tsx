@@ -11,6 +11,7 @@ import { PH_BANDS } from "../../lib/phBand.ts";
 import { HighlightLegend } from "../ExcerptBlock.tsx";
 import { CONTROL, FOCUS_RING } from "../meta.tsx";
 import { DeviceSwitch } from "../DeviceSwitch.tsx";
+import { LetterSignup } from "../LetterSignup.tsx";
 import { Wordmark } from "../Wordmark.tsx";
 import { Byline } from "../story/Byline.tsx";
 import { EditionNotice, LEGAL_HREF, SECTION_LINKS, editionLine, useEditionStatus, useSectionActive } from "./shared.tsx";
@@ -47,6 +48,10 @@ export function Rail() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Above the reading keys: on a laptop the rail is taller than the window,
+          and anything below the keys sits under the fold. */}
+      <LetterSignup placement="rail" className="border-t border-rule pt-4" />
 
       <div className="grid gap-3.5 border-t border-rule pt-4">
         <p className={MICRO}>P/H scale</p>
